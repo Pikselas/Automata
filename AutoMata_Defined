@@ -1,0 +1,94 @@
+DFA::DFA_STATE::DFA_STATE(std::string name,DFA::STATE_TYPE type) : state_name(name),state_type(type){}
+DFA::STATE_TYPE DFA::DFA_STATE::StateType() const
+{
+    return state_type;
+}
+std::string DFA::DFA_STATE::StateName() const
+{
+    return state_name;
+}
+DFA::DFA_STATE* DFA::DFA_STATE::NextStateByValue(const char valueName) const
+{
+    DFA_STATE * ptr = nullptr;
+    if(ConnectedWithBy.find(valueName) != ConnectedWithBy.end())
+    {
+       ptr = ConnectedWithBy[valueName];
+    }
+    return ptr;
+}
+void DFA::DFA_STATE::MakeConnectionWith(const char valueName,DFA_STATE * const state)
+{
+    if(ConnectedWithBy.find(valueName) == ConnectedWithBy.end())
+    {
+        ConnectedWithBy[valueName] = state;
+    }
+    else 
+    {
+        ConnectedWithBy.insert(std::pair<char,DFA_STATE*>(valueName,state));
+    }
+}
+void DFA::CreateState(const std::string name,const STATE_TYPE type)
+{
+    if(states.find(name) == states.end())
+    {
+        if(type == STATE_TYPE::STATE_TYPE_INITIAL || type == STATE_TYPE::STATE_TYPE_INITIAL_AND_FINAL)
+        {
+            if(INITIAL_STATE.length() > 0)
+            {
+                throw 10;
+            }
+            else
+            {
+                INITIAL_STATE = name;
+            }
+        }
+        states.insert(std::pair<std::string,std::unique_ptr<DFA_STATE>>(name,std::make_unique<DFA_STATE>(DFA_STATE(name,type))));
+    }
+}
+void DFA::BindState(const std::string start_state,const std::string dest_state,const char value_name)
+{
+    if(states.find(start_state) != states.end() && states.find(dest_state) != states.end())
+    {
+        states[start_state]->MakeConnectionWith(value_name,states[dest_state].get());
+    }
+}
+DFA::_Out DFA::run(const std::string String) const
+{
+    std::vector<std::string> sts;
+    DFA_STATE * ActiveState = states[INITIAL_STATE].get();
+    size_t strLength = String.length();
+    size_t PointerPos = 0;
+    bool isFinal;
+    if(states[INITIAL_STATE]->StateType() == STATE_TYPE::STATE_TYPE_INITIAL_AND_FINAL)
+    {
+        isFinal = true;
+    }
+    else    
+    {
+        isFinal = false;
+    }
+    //std::cout<<ActiveState<<std::endl;
+    while(PointerPos < strLength)
+    {
+        sts.push_back(ActiveState->StateName());
+        ActiveState = ActiveState->NextStateByValue(String[PointerPos]);
+        //std::cout<<ActiveState<<std::endl;
+        if(ActiveState != nullptr)
+        {
+            if(ActiveState->StateType() == STATE_TYPE::STATE_TYPE_FINAL || ActiveState->StateType() == STATE_TYPE::STATE_TYPE_INITIAL_AND_FINAL)
+            {
+                isFinal = true;
+            }
+            else
+            {
+                isFinal = false;
+            }
+        }
+        else
+        {
+            break;
+        }
+        PointerPos++;
+    }
+    return _Out{sts,isFinal};
+}

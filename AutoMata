@@ -1,0 +1,50 @@
+#pragma once
+#include<iostream>
+#include<string>
+#include<map>
+#include<memory>
+#include<vector>
+class DFA
+{
+    private:
+    class DFA_STATE;
+    public:
+       enum class STATE_TYPE
+        {
+            STATE_TYPE_INITIAL,
+            STATE_TYPE_INITIAL_AND_FINAL,
+            STATE_TYPE_FINAL,
+            STATE_TYPE_NORMAL
+        };
+        typedef std::pair<std::vector<std::string>,bool> _Out;
+    private:
+    mutable std::map<std::string,std::unique_ptr<DFA::DFA_STATE>> states;
+    std::string INITIAL_STATE; 
+    private:
+        class DFA_STATE
+        {
+            private:
+                std::string state_name;
+                DFA::STATE_TYPE state_type;
+                mutable std::map<char,DFA_STATE*> ConnectedWithBy;
+            public:
+                DFA_STATE() = delete;
+                DFA_STATE(std::string name,DFA::STATE_TYPE type);
+                //DFA_STATE(DFA_STATE& const state) = delete;
+                ~DFA_STATE() = default;
+            public:
+                DFA::STATE_TYPE StateType() const;
+                std::string StateName() const;
+                DFA_STATE * NextStateByValue(const char valueName) const;
+                void MakeConnectionWith(const char valueName,DFA_STATE* const state);
+        };
+    public:
+        DFA() = default;
+        DFA(const DFA& obj) = delete;
+        ~DFA() = default;
+    public:
+        _Out run(const std::string String) const;
+        void CreateState(const std::string name,const STATE_TYPE type);
+        void BindState(const std::string start_state,const std::string dest_state,char const value_name);
+};
+#include"AutoMata_Defined"
